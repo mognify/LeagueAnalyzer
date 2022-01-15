@@ -44,6 +44,7 @@ public class Analysis {
 		DataCall.setCacheProvider(new FileSystemCacheProvider());
 		
 		for(String matchId : target.matchHistory) {
+			System.out.println("Analyzing matchId " + matchId);
 			analyzePastMatch(matchId, target);
 		}
 	}
@@ -54,6 +55,9 @@ public class Analysis {
 				workingShard);
 		target.matchHistory = mlb.withCount(count)
 				.get();
+		for(String matchId : target.matchHistory) {
+			System.out.println(matchId);
+		}
 	}
 
 	private static void analyzePastMatch(String matchId, SumInfo target) {
@@ -67,36 +71,62 @@ public class Analysis {
 	// and then calls to fill that container
 	// poor design. The call to fill the container should be separate
 	private static void getWardTimes(LOLMatch match, SumInfo target) {
-		TimelinePosition[][] wardPlacements =
-				new TimelinePosition[4][200];
+		System.out.println("getWardTimes(match, target)");
+
+		int wardsPlaced = 200;
+		Long[][] wardPlacements =
+				new Long[4][wardsPlaced];
 		// there are 4 types of wards, x index
 		// then we need the time the wards were placed, max 200 wards assumed
 		
+		int tpid = 0; // target participant id
+		// setting container size to the player's quantity of placed wards
 		for(MatchParticipant mp : match.getParticipants()) {
-			//System.out.println(mp.getSummonerName());
 			if(mp.getSummonerName().equals(target.name)) {
-				//System.out.println(mp.getSummonerName());
+				wardsPlaced = mp.getWardsPlaced();
+				tpid = mp.getParticipantId();
+				System.out.println(tpid + "Wards placed: " + wardsPlaced);
 				wardPlacements =
-					new TimelinePosition[4][mp.getWardsPlaced()];
+					new Long[4][mp.getWardsPlaced()];
 			}
 		}
 		
 		LOLTimeline timeline = match.getTimeline();
 		
-		List<TimelinePosition[][]> wardTimes = new ArrayList<TimelinePosition[][]>();
-		wardTimes.add(getPlayerWardTimes(timeline, wardPlacements));
+		List<Long[][]> wardTimes = new ArrayList<Long[][]>();
+		wardTimes.add(getPlayerWardTimes(timeline, wardPlacements, tpid));
+		
+		// output the results for debugging
+		Iterator<Long[][]> wti = wardTimes.iterator();
+		while(wti.hasNext()) {
+			Long[][] tp = wti.next();
+			for(int i = 0; i < wardsPlaced; i++) {
+				for(int j = 0; j < 4; j++) {
+					if(Objects.isNull(tp[j][i])) continue;
+					
+					String wardName = j==0?"yellow"
+							:j==1?"blue"
+									:j==2?"sight"
+											:"control";
+					System.out.println("\t" + wardName + " placement time: " + (tp[j][i]));
+				}
+			}
+		}
 	}
 
-	private static TimelinePosition[][] getPlayerWardTimes(LOLTimeline timeline, TimelinePosition[][] wardPlacements) {
+	private static Long[][] getPlayerWardTimes(LOLTimeline timeline, Long[][] wardPlacements, int tpid) {
+		System.out.println("getPlayerWardTimes(match, target)");
 		int wi = 0; // ward index
 		// i should use 0 or 4 for error, but this isnt serious
 		
 		for(TimelineFrame tf : timeline.getFrames()) {
-			//System.out.println("Checking frame " + tf.getTimestamp());
 			for(TimelineFrameEvent tfe : tf.getEvents()) {
+				if(tfe.getCreatorId() != tpid) continue;
+				
+				
 				WardType wt = tfe.getWardType();
 				if(Objects.isNull(wt)) continue;
-				System.out.print(wt.prettyName() + ";");
+				
 				String pn = wt.prettyName().toLowerCase();
 
 				// 0=Ytrinket 1=Btrinket 2=itemWard 3=control
@@ -107,18 +137,19 @@ public class Analysis {
 								(pn.contains("sight")?
 										2:3);
 					
-				System.out.println("(" + wardTypeIndex + ",  " + (wi+1) + ")");
+				//System.out.println(" (" + wardTypeIndex + ",  " + (wi+1) + ")");
 				wardPlacements[wardTypeIndex][wi++] =
-						tfe.getPosition();
+						tfe.getTimestamp();
 				
+				/*
 				try {
-					System.out.println("Position: " + tfe.getPosition().getX() + ", " + tfe.getPosition().getY());
+					System.out.println("\nPlacement time: " + wardPlacements[wardTypeIndex][wi-1]);
 				}catch(Exception e) {
-					/*System.out.println("\nPosition grab failed.");
-					e.printStackTrace();*/
+					System.out.println("\nPosition grab failed.");
+					e.printStackTrace();
 					// RIOT API NO LONGER PROVIDES WARD PLACEMENT LOCATIONS
 					continue;
-				}
+				}*/
 			}
 		}
 		
