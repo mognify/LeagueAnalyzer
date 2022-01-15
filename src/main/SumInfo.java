@@ -6,9 +6,11 @@ import java.util.List;
 public class SumInfo {
 	String name, id, puuid, accountId, history;
 	List<String> matchHistory;
+	List<Long> wardTimes;
 	
 	public SumInfo(String name) {
 		matchHistory = new ArrayList<String>();
+		wardTimes = new ArrayList<Long>();
 		this.name = name;
 	}
 	

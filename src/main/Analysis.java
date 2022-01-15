@@ -2,10 +2,10 @@ package main;
 
 import static main.Main.ot;
 import static main.Main.workingShard;
-import static main.Main.api;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -15,17 +15,13 @@ import org.jsoup.Jsoup;
 import no.stelar7.api.r4j.basic.cache.impl.FileSystemCacheProvider;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.types.lol.WardType;
-import no.stelar7.api.r4j.basic.utils.LazyList;
-import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchBuilder;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
-import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.TimelineBuilder;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrame;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelinePosition;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 public class Analysis {
 	public static void analyzeLiveGame() {
@@ -44,20 +40,29 @@ public class Analysis {
 		DataCall.setCacheProvider(new FileSystemCacheProvider());
 		
 		for(String matchId : target.matchHistory) {
-			System.out.println("Analyzing matchId " + matchId);
 			analyzePastMatch(matchId, target);
 		}
+		
+		Collections.sort(target.wardTimes);
+		for(Long wardTime : target.wardTimes)
+			System.out.println(convertMinSecMil(wardTime));
 	}
 	
+	private static String convertMinSecMil(Long wardTime) {
+		Long minutes = 0 + (wardTime/60000);
+		Long seconds = 0 + (wardTime%60000/1000);
+		String wts = String.valueOf(wardTime);
+		return String.valueOf(minutes<10?"0" + minutes:minutes) + ":"
+				+ String.valueOf(seconds<10?"0" + seconds:seconds) + "."
+				+ wts.substring(wts.length() - 3);
+	}
+
 	private static void fillSumHistory(SumInfo target, int start, int count) {
 		MatchListBuilder mlb = new MatchListBuilder();
 		mlb = mlb.withPuuid(target.puuid).withPlatform(
 				workingShard);
 		target.matchHistory = mlb.withCount(count)
 				.get();
-		for(String matchId : target.matchHistory) {
-			System.out.println(matchId);
-		}
 	}
 
 	private static void analyzePastMatch(String matchId, SumInfo target) {
@@ -71,7 +76,6 @@ public class Analysis {
 	// and then calls to fill that container
 	// poor design. The call to fill the container should be separate
 	private static void getWardTimes(LOLMatch match, SumInfo target) {
-		System.out.println("getWardTimes(match, target)");
 
 		int wardsPlaced = 200;
 		Long[][] wardPlacements =
@@ -85,7 +89,6 @@ public class Analysis {
 			if(mp.getSummonerName().equals(target.name)) {
 				wardsPlaced = mp.getWardsPlaced();
 				tpid = mp.getParticipantId();
-				System.out.println(tpid + "Wards placed: " + wardsPlaced);
 				wardPlacements =
 					new Long[4][mp.getWardsPlaced()];
 			}
@@ -96,7 +99,6 @@ public class Analysis {
 		List<Long[][]> wardTimes = new ArrayList<Long[][]>();
 		wardTimes.add(getPlayerWardTimes(timeline, wardPlacements, tpid));
 		
-		// output the results for debugging
 		Iterator<Long[][]> wti = wardTimes.iterator();
 		while(wti.hasNext()) {
 			Long[][] tp = wti.next();
@@ -104,18 +106,20 @@ public class Analysis {
 				for(int j = 0; j < 4; j++) {
 					if(Objects.isNull(tp[j][i])) continue;
 					
-					String wardName = j==0?"yellow"
+					target.wardTimes.add(tp[j][i]);
+
+					// output the results for debugging
+					/*String wardName = j==0?"yellow"
 							:j==1?"blue"
 									:j==2?"sight"
-											:"control";
-					System.out.println("\t" + wardName + " placement time: " + (tp[j][i]));
+											:"control";*/
+					//System.out.println("\t" + wardName + " placement time: " + (tp[j][i]));
 				}
 			}
 		}
 	}
 
 	private static Long[][] getPlayerWardTimes(LOLTimeline timeline, Long[][] wardPlacements, int tpid) {
-		System.out.println("getPlayerWardTimes(match, target)");
 		int wi = 0; // ward index
 		// i should use 0 or 4 for error, but this isnt serious
 		
@@ -161,9 +165,7 @@ public class Analysis {
 		TimelinePosition[][] wardPlacements =
 				new TimelinePosition[4][200];
 		for(MatchParticipant mp : match.getParticipants()) {
-			//System.out.println(mp.getSummonerName());
 			if(mp.getSummonerName().equals(target.name)) {
-				//System.out.println(mp.getSummonerName());
 				wardPlacements =
 					new TimelinePosition[4][mp.getWardsPlaced()];
 			}
@@ -241,7 +243,6 @@ public class Analysis {
 			//System.out.println(doc);
 			target.history = doc;
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}*/

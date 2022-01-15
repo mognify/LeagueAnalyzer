@@ -23,7 +23,7 @@ public class Main {
 		boolean dev = true, live = false;
 		
 		if(!dev) {
-			System.out.print("API key: "); // RGAPI-12048812-3e5f-408a-9380-33f5bc05bd06
+			//System.out.print("API key: "); // RGAPI-12048812-3e5f-408a-9380-33f5bc05bd06
 			Scanner ui = new Scanner(System.in);
 			apik = ui.nextLine();
 			
@@ -36,7 +36,7 @@ public class Main {
 			
 			ui.close();
 		}else {
-			apik = "RGAPI-b93b6c2f-75ec-4273-91e6-14f8ba50bc40";
+			apik = "RGAPI-15f38fd6-e58e-48d5-ba40-1e7905095438";
 			
 			ot.name = "LSXYZ";
 			live = false;
