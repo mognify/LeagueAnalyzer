@@ -44,8 +44,17 @@ public class Analysis {
 		}
 		
 		Collections.sort(target.wardTimes);
-		for(Long wardTime : target.wardTimes)
-			System.out.println(convertMinSecMil(wardTime));
+		Long lastTime = 0L;
+		for(Long wardTime : target.wardTimes) {
+			if(lastTime == 0L) {
+				lastTime = wardTime;
+			}else {
+				System.out.println("\t(" + ((wardTime - lastTime)/1000) + "s window)");
+				lastTime = wardTime;
+			}
+			
+			System.out.println(convertMinSecMil(wardTime));// + "\t\t(" + wardTime + ")");
+		}
 	}
 	
 	private static String convertMinSecMil(Long wardTime) {
@@ -251,7 +260,7 @@ public class Analysis {
 		String sumByName =
 			"https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/"
 			+ target.name + "?api_key=" + Main.apik;
-		System.out.println(sumByName);
+		//System.out.println(sumByName);
 		try {
 			String doc = Jsoup.connect(sumByName)
 				.ignoreContentType(true)
