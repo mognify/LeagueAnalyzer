@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SumInfo {
-	String name, id, puuid, accountId, history;
+	String name, id, puuid, accountId, history, wardHistory;
 	List<String> matchHistory;
 	List<Long> wardTimes;
 	
@@ -12,6 +12,7 @@ public class SumInfo {
 		matchHistory = new ArrayList<String>();
 		wardTimes = new ArrayList<Long>();
 		this.name = name;
+		wardHistory = "";
 	}
 	
 	public SumInfo() {

@@ -12,8 +12,7 @@ import java.util.Objects;
 
 import org.jsoup.Jsoup;
 
-import no.stelar7.api.r4j.basic.cache.impl.FileSystemCacheProvider;
-import no.stelar7.api.r4j.basic.calling.DataCall;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.WardType;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
@@ -24,20 +23,99 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelinePosition;
 
 public class Analysis {
+	public static int start = 0, count = 3;
+	
+	/*
+	 * gathers every opponent's name
+	 * runs analyzeMatchHistory on each
+	 * displays a table of times and windows
+	 */
 	public static void analyzeLiveGame() {
 		fillSumInfo(ot);
 	}
 
-	public static void analyzeMatchHistory(SumInfo target) {
+	/*
+	 * like analyzeLiveGame,
+	 * gathers every opponent's name
+	 * runs analyzeMatchHistory on each
+	 * displays a table of times and windows
+	 * but runs this on the last match of a target,
+	 * and not the target's live game.
+	 */
+	public static void analyzeLastMatchLikeLiveGame() {
+		fillSumInfo(ot);
+		
+		int start1 = 0, count1 = 1;
+		fillSumHistory(ot, start1, count1);
+		if(Objects.isNull(ot.matchHistory)
+				|| ot.matchHistory.size() == 0) return;
+		
+		LOLMatch match = LOLMatch.get(workingShard, ot.matchHistory.get(0));
+		List<MatchParticipant> players = match.getParticipants();
+		
+		// get ot's team
+		TeamType allyTeam = TeamType.AI;
+		for(MatchParticipant p : players) {
+			System.out.println("Looking at " + p.getSummonerName());
+			System.out.println("\tThey were on team " + p.getTeam());
+			System.out.println("\tThe target's name is " + ot.name);
+			if(p.getSummonerName().equals(ot.name)) {
+				allyTeam = p.getTeam();
+				System.out.println("\t\tTarget player found, retrieving their team as " + allyTeam);
+				break;
+			}
+		}
+		
+		// get all players on enemy team
+		/*for(int i = 0; i < players.size(); i++) {
+			System.out.println("LOOKING at " + players.get(i).getSummonerName());
+			System.out.println("\tThey were on team " + players.get(i).getTeam());
+			System.out.println("\tThe target team is " + allyTeam);
+
+			if(players.get(i).getTeam().equals(allyTeam)) {
+				System.out.println("\t\tAlly detected. Removing from list");
+				players.remove(i);
+			}
+		}*/
+		
+		// get all players on enemy team
+		Iterator<MatchParticipant> playerIterator = players.iterator();
+		List<MatchParticipant> enemies = new ArrayList<MatchParticipant>();
+		while(playerIterator.hasNext()) {
+			MatchParticipant p = playerIterator.next();
+			System.out.println("LOOKING at " + p.getSummonerName());
+			System.out.println("\tThey were on team " + p.getTeam());
+			System.out.println("\tThe target team is " + allyTeam);
+
+			if(!p.getTeam().equals(allyTeam)) {
+				System.out.println("\t\tEnemy detected. Adding to enemies list");
+				enemies.add(p);
+			}
+		}
+		System.out.println("--------------");
+		
+		List<SumInfo> enemyTeam = new ArrayList<SumInfo>();
+		for(MatchParticipant p : enemies) {
+			SumInfo tempSI = new SumInfo(p.getSummonerName());
+			tempSI = analyzeMatchHistory(tempSI);
+			enemyTeam.add(tempSI);
+		}
+		
+		for(SumInfo si  : enemyTeam) {
+			System.out.println("\n\t\t" + si.name + si.wardHistory);
+		}
+	}
+
+	public static SumInfo analyzeMatchHistory(SumInfo target) {
 		fillSumInfo(target); // gets all their identifiers
 		
-		int start = 0, count = 3;
 		//fillSumHistory(target, start, count); // fills target.history string
 		fillSumHistory(target, start, count);
 		if(Objects.isNull(target.matchHistory)
-				|| target.matchHistory.size() == 0) return;
-		
-		DataCall.setCacheProvider(new FileSystemCacheProvider());
+				|| target.matchHistory.size() == 0) {
+			System.out.println(target.name + " has no history!");
+			return target;
+		}
 		
 		for(String matchId : target.matchHistory) {
 			analyzePastMatch(matchId, target);
@@ -45,25 +123,33 @@ public class Analysis {
 		
 		Collections.sort(target.wardTimes);
 		Long lastTime = 0L;
+		
 		for(Long wardTime : target.wardTimes) {
 			if(lastTime == 0L) {
 				lastTime = wardTime;
 			}else {
-				System.out.println("\t(" + ((wardTime - lastTime)/1000) + "s window)");
+				target.wardHistory += "\n\t("
+						+ convertMinSecMil((wardTime - lastTime)) + ")";
 				lastTime = wardTime;
 			}
 			
-			System.out.println(convertMinSecMil(wardTime));// + "\t\t(" + wardTime + ")");
+			target.wardHistory += "\n" + convertMinSecMil(wardTime);// + "\t\t(" + wardTime + ")");
 		}
+		
+		return target;
 	}
 	
 	private static String convertMinSecMil(Long wardTime) {
 		Long minutes = 0 + (wardTime/60000);
 		Long seconds = 0 + (wardTime%60000/1000);
 		String wts = String.valueOf(wardTime);
-		return String.valueOf(minutes<10?"0" + minutes:minutes) + ":"
-				+ String.valueOf(seconds<10?"0" + seconds:seconds) + "."
-				+ wts.substring(wts.length() - 3);
+		try {
+			return String.valueOf(minutes<10?"0" + minutes:minutes) + ":"
+					+ String.valueOf(seconds<10?"0" + seconds:seconds) + "."
+					+ wts.substring(wts.length() - 3);
+		}catch(java.lang.StringIndexOutOfBoundsException e) {
+			return wts + "ms";
+		}
 	}
 
 	private static void fillSumHistory(SumInfo target, int start, int count) {
@@ -99,7 +185,8 @@ public class Analysis {
 				wardsPlaced = mp.getWardsPlaced();
 				tpid = mp.getParticipantId();
 				wardPlacements =
-					new Long[4][mp.getWardsPlaced()];
+					new Long[4][mp.getWardsPlaced()*200];
+				System.out.println("Wards placed by " + mp.getSummonerName() + ": " + wardsPlaced);
 			}
 		}
 		
@@ -273,9 +360,9 @@ public class Analysis {
 					.replace("}", "");
 			
 			//System.out.println(doc);
-			ot.id = parseSumInfo(doc, "id");
-			ot.puuid = parseSumInfo(doc, "puuid");
-			ot.accountId = parseSumInfo(doc, "accountId");
+			target.id = parseSumInfo(doc, "id");
+			target.puuid = parseSumInfo(doc, "puuid");
+			target.accountId = parseSumInfo(doc, "accountId");
 			//System.out.println(ot.toString());
 			
 		} catch (IOException e) {

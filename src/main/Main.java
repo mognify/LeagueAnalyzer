@@ -3,6 +3,8 @@ package main;
 import java.util.Scanner;
 
 import main.Credentials;
+import no.stelar7.api.r4j.basic.cache.impl.FileSystemCacheProvider;
+import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.impl.R4J.LOLAPI;
@@ -41,6 +43,7 @@ public class Main {
 			ot.name = "LSXYZ";
 			live = false;
 		}
+		DataCall.setCacheProvider(new FileSystemCacheProvider());
 		workingShard = LeagueShard.NA1;
 		Credentials.lolkey = apik;
 		r4j = new R4J(Credentials.getCreds());
@@ -49,7 +52,8 @@ public class Main {
 				.getSummonerByName(workingShard, ot.name);
 		
 		if(live) Analysis.analyzeLiveGame();
-		else Analysis.analyzeMatchHistory(ot);
+		else if(!dev) Analysis.analyzeMatchHistory(ot);
+		else Analysis.analyzeLastMatchLikeLiveGame();
 	}
 
 }
