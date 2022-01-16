@@ -121,7 +121,7 @@ public class Analysis {
 					timetable += "xx:xx.xxx";
 				}
 				
-				timetable += "\t\t\t";
+				timetable += "\t\t";
 				switch(d) {
 					case 0: d++; break;
 					case 1: d--; timetable+="\t"; break;
