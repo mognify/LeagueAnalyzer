@@ -21,12 +21,50 @@ public class Main {
 	public static LOLAPI api;
 	public static LeagueShard workingShard;
 
+	/*
+	 * args should be 1 thing and thats the api key
+	 */
 	public static void main(String[] args) {
+		run(args);
+	}
+
+	private static void run(String[] args) {
+		
 		boolean dev = false, live = true;
 		
-		if(!dev) {
+		Scanner ui = new Scanner(System.in);
+		
+		if(args.length == 1) {
+			apik = args[0];
+			
+			System.out.print("\nName: ");
+			ot.name = ui.nextLine();
+			
+			System.out.print("\nLive game? [Y/N] ");
+			String temp = ui.nextLine();
+			live = temp.toLowerCase().equals("y");
+		}else if(args.length == 2) {
+			// apikey, name
+			apik = args[0];
+			ot.name = args[1];
+			
+			System.out.print("\nLive game? [Y/N] ");
+			String temp = ui.nextLine();
+			live = temp.toLowerCase().equals("y");
+		}else if(args.length == 3) {
+			// apikey, name, live/dev: if "true", live; if "1", dev; else not live not dev
+			apik = args[0];
+			ot.name = args[1];
+			String t = args[2];
+			if(t.equals("true")) live = true;
+			else if(t.equals("1")) {
+				dev = true; live = false;
+			}else {
+				dev = false; live = false;
+			}
+		}else if(!dev) {
 			//System.out.print("API key: "); // RGAPI-12048812-3e5f-408a-9380-33f5bc05bd06
-			Scanner ui = new Scanner(System.in);
+			System.out.print("Api key: ");
 			apik = ui.nextLine();
 			
 			System.out.print("\nName: ");
@@ -34,15 +72,22 @@ public class Main {
 			
 			System.out.print("\nLive game? [Y/N] ");
 			String temp = ui.nextLine();
-			live = temp.toLowerCase().contains("y");
+			live = temp.toLowerCase().equals("y");
 			
-			ui.close();
+			if(!live) {
+				System.out.print("Theirs (0) or their last opponents' (1)? ");
+				temp = ui.nextLine();
+				if(temp.equals("1")) dev = true;
+			}
 		}else {
 			apik = "RGAPI-15f38fd6-e58e-48d5-ba40-1e7905095438";
 			
 			ot.name = "LSXYZ";
 			live = false;
 		}
+		
+		ui.close();
+		
 		DataCall.setCacheProvider(new FileSystemCacheProvider());
 		workingShard = LeagueShard.NA1;
 		Credentials.lolkey = apik;
@@ -52,8 +97,20 @@ public class Main {
 				.getSummonerByName(workingShard, ot.name);
 		
 		if(live) Analysis.analyzeLiveGame();
-		else if(!dev) Analysis.analyzeMatchHistory(ot);
+		else if(!dev) {
+			Analysis.analyzeMatchHistory(ot);
+			System.out.println(ot.wardHistory);
+		}
 		else Analysis.analyzeLastMatchLikeLiveGame();
+		/*
+		try {
+			Thread.sleep(9999);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		
+		//run(args);
 	}
 
 }

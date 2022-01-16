@@ -34,6 +34,7 @@ public class Analysis {
 	 * displays a table of times and windows
 	 */
 	public static void analyzeLiveGame() {
+		System.out.println("analyzeLiveGame");
 		fillSumInfo(ot);
 		
 		// replace this with retrieving the live game
@@ -53,7 +54,7 @@ public class Analysis {
 		// get ot's team
 		TeamType allyTeam = TeamType.AI;
 		for(SpectatorParticipant p : players) {
-			System.out.println(p.getTeam());
+			System.out.println("Player team: " + p.getTeam());
 			if(p.getSummonerName().equals(ot.name)) {
 				allyTeam = p.getTeam();
 				break;
@@ -77,6 +78,8 @@ public class Analysis {
 		}
 		
 		displayMultipleWardTimes(enemyTeam);
+		
+		return;
 	}
 
 	private static void displayMultipleWardTimes(List<SumInfo> enemyTeam) {
@@ -143,6 +146,7 @@ public class Analysis {
 	 * and not the target's live game.
 	 */
 	public static void analyzeLastMatchLikeLiveGame() {
+		System.out.println("analyzeLastMatchLikeLiveGame");
 		fillSumInfo(ot);
 		
 		int start1 = 0, count1 = 1;
@@ -183,6 +187,8 @@ public class Analysis {
 		}*/
 
 		displayMultipleWardTimes(enemyTeam);
+		
+		return;
 	}
 
 	public static SumInfo analyzeMatchHistory(SumInfo target) {
