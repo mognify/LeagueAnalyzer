@@ -22,7 +22,7 @@ public class Main {
 	public static LeagueShard workingShard;
 
 	public static void main(String[] args) {
-		boolean dev = true, live = false;
+		boolean dev = false, live = true;
 		
 		if(!dev) {
 			//System.out.print("API key: "); // RGAPI-12048812-3e5f-408a-9380-33f5bc05bd06

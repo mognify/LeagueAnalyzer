@@ -53,6 +53,7 @@ public class Analysis {
 		// get ot's team
 		TeamType allyTeam = TeamType.AI;
 		for(SpectatorParticipant p : players) {
+			System.out.println(p.getTeam());
 			if(p.getSummonerName().equals(ot.name)) {
 				allyTeam = p.getTeam();
 				break;
@@ -91,11 +92,11 @@ public class Analysis {
 		// the following evens will always be the times
 		// the following odds will always be the differences
 		// dont need to care about the odds/even differences,
-		// display them the same because theyll allready contain
+		// display them the same because theyll already contain
 		// the \tabs
 		String timetable = "";
 		for(SumInfo si  : enemyTeam) {
-			timetable += si.name + "\t\t";
+			timetable += "" + si.name + "\t\t";
 			//System.out.println("\n\t\t" + si.name + si.wardHistory);
 		}
 		timetable += "\n";
@@ -205,8 +206,8 @@ public class Analysis {
 			if(lastTime == 0L) {
 				lastTime = wardTime;
 			}else {
-				target.wardHistory += "\n\t("
-						+ convertMinSecMil((wardTime - lastTime)) + ")";
+				target.wardHistory += "\n\t> "
+						+ convertMinSecMil((wardTime - lastTime));
 				lastTime = wardTime;
 			}
 			
