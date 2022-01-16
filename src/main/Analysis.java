@@ -1,6 +1,7 @@
 package main;
 
 import static main.Main.ot;
+import static main.Main.ots;
 import static main.Main.workingShard;
 
 import java.io.IOException;
@@ -21,6 +22,8 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrame;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelinePosition;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 public class Analysis {
 	public static int start = 0, count = 3;
@@ -32,6 +35,102 @@ public class Analysis {
 	 */
 	public static void analyzeLiveGame() {
 		fillSumInfo(ot);
+		
+		// replace this with retrieving the live game
+		/*
+		int start1 = 0, count1 = 1;
+		fillSumHistory(ot, start1, count1);
+		if(Objects.isNull(ot.matchHistory)
+				|| ot.matchHistory.size() == 0) return;
+		
+		LOLMatch match = LOLMatch.get(workingShard, ot.matchHistory.get(0));
+		List<MatchParticipant> players = match.getParticipants();
+		*/
+		
+		SpectatorGameInfo cg = ots.getCurrentGame();
+		List<SpectatorParticipant> players = cg.getParticipants();
+		
+		// get ot's team
+		TeamType allyTeam = TeamType.AI;
+		for(SpectatorParticipant p : players) {
+			if(p.getSummonerName().equals(ot.name)) {
+				allyTeam = p.getTeam();
+				break;
+			}
+		}
+		
+		Iterator<SpectatorParticipant> playerIterator = players.iterator();
+		List<SpectatorParticipant> enemies = new ArrayList<SpectatorParticipant>();
+		while(playerIterator.hasNext()) {
+			SpectatorParticipant p = playerIterator.next();
+			if(!p.getTeam().equals(allyTeam)) {
+				enemies.add(p);
+			}
+		}
+		
+		List<SumInfo> enemyTeam = new ArrayList<SumInfo>();
+		for(SpectatorParticipant p : enemies) {
+			SumInfo tempSI = new SumInfo(p.getSummonerName());
+			tempSI = analyzeMatchHistory(tempSI);
+			enemyTeam.add(tempSI);
+		}
+		
+		displayMultipleWardTimes(enemyTeam);
+	}
+
+	private static void displayMultipleWardTimes(List<SumInfo> enemyTeam) {
+		/*
+		 * the idea for the new display...
+		 * player1		player2		player3		player4		player5
+		 * time				time				time				time				time
+		 * time				time				time				time				time
+		 * time				time				time				time				time
+		 * time				time				time				time				time
+		 */
+		// the first line will always be the name
+		// the following evens will always be the times
+		// the following odds will always be the differences
+		// dont need to care about the odds/even differences,
+		// display them the same because theyll allready contain
+		// the \tabs
+		String timetable = "";
+		for(SumInfo si  : enemyTeam) {
+			timetable += si.name + "\t\t";
+			//System.out.println("\n\t\t" + si.name + si.wardHistory);
+		}
+		timetable += "\n";
+		
+		// fill container for each
+		// then for each, get the nth index (try/catch oob ofc)
+		// format and add to timetable, filling catch as x
+		List<String[]> times = new ArrayList<String[]>();
+		for(SumInfo si  : enemyTeam)
+			times.add(si.wardHistory.split("\n"));
+		
+		// get largest array size
+		int mostWards = 0;
+		for(String[] s : times)
+			if(s.length > mostWards) mostWards = s.length;
+		
+		for(int i = 0; i < mostWards; i++) {
+			int d = 0;
+			for(String[] s : times) {
+				try {
+					timetable += s[i].replace("\t", "");
+				}catch(Exception e) {
+					timetable += "xx:xx.xxx";
+				}
+				
+				timetable += "\t\t\t";
+				switch(d) {
+					case 0: d++; break;
+					case 1: d--; timetable+="\t"; break;
+				}
+			}
+			timetable += "\n";
+		}
+		
+		System.out.println(timetable);
 	}
 
 	/*
@@ -56,43 +155,20 @@ public class Analysis {
 		// get ot's team
 		TeamType allyTeam = TeamType.AI;
 		for(MatchParticipant p : players) {
-			System.out.println("Looking at " + p.getSummonerName());
-			System.out.println("\tThey were on team " + p.getTeam());
-			System.out.println("\tThe target's name is " + ot.name);
 			if(p.getSummonerName().equals(ot.name)) {
 				allyTeam = p.getTeam();
-				System.out.println("\t\tTarget player found, retrieving their team as " + allyTeam);
 				break;
 			}
 		}
 		
-		// get all players on enemy team
-		/*for(int i = 0; i < players.size(); i++) {
-			System.out.println("LOOKING at " + players.get(i).getSummonerName());
-			System.out.println("\tThey were on team " + players.get(i).getTeam());
-			System.out.println("\tThe target team is " + allyTeam);
-
-			if(players.get(i).getTeam().equals(allyTeam)) {
-				System.out.println("\t\tAlly detected. Removing from list");
-				players.remove(i);
-			}
-		}*/
-		
-		// get all players on enemy team
 		Iterator<MatchParticipant> playerIterator = players.iterator();
 		List<MatchParticipant> enemies = new ArrayList<MatchParticipant>();
 		while(playerIterator.hasNext()) {
 			MatchParticipant p = playerIterator.next();
-			System.out.println("LOOKING at " + p.getSummonerName());
-			System.out.println("\tThey were on team " + p.getTeam());
-			System.out.println("\tThe target team is " + allyTeam);
-
 			if(!p.getTeam().equals(allyTeam)) {
-				System.out.println("\t\tEnemy detected. Adding to enemies list");
 				enemies.add(p);
 			}
 		}
-		System.out.println("--------------");
 		
 		List<SumInfo> enemyTeam = new ArrayList<SumInfo>();
 		for(MatchParticipant p : enemies) {
@@ -100,10 +176,12 @@ public class Analysis {
 			tempSI = analyzeMatchHistory(tempSI);
 			enemyTeam.add(tempSI);
 		}
-		
+		/*
 		for(SumInfo si  : enemyTeam) {
 			System.out.println("\n\t\t" + si.name + si.wardHistory);
-		}
+		}*/
+
+		displayMultipleWardTimes(enemyTeam);
 	}
 
 	public static SumInfo analyzeMatchHistory(SumInfo target) {
@@ -113,7 +191,6 @@ public class Analysis {
 		fillSumHistory(target, start, count);
 		if(Objects.isNull(target.matchHistory)
 				|| target.matchHistory.size() == 0) {
-			System.out.println(target.name + " has no history!");
 			return target;
 		}
 		
@@ -146,9 +223,9 @@ public class Analysis {
 		try {
 			return String.valueOf(minutes<10?"0" + minutes:minutes) + ":"
 					+ String.valueOf(seconds<10?"0" + seconds:seconds) + "."
-					+ wts.substring(wts.length() - 3);
+					+ wts.substring(wts.length() - 3) + "ms";
 		}catch(java.lang.StringIndexOutOfBoundsException e) {
-			return wts + "ms";
+			return "xx:xx.xxx";
 		}
 	}
 
@@ -186,7 +263,7 @@ public class Analysis {
 				tpid = mp.getParticipantId();
 				wardPlacements =
 					new Long[4][mp.getWardsPlaced()*200];
-				System.out.println("Wards placed by " + mp.getSummonerName() + ": " + wardsPlaced);
+				//System.out.println("Wards placed by " + mp.getSummonerName() + ": " + wardsPlaced);
 			}
 		}
 		
