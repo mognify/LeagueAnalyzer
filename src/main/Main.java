@@ -111,6 +111,14 @@ public class Main {
 		}*/
 		
 		//run(args);
+		
+		/*
+		 * TODO: next steps...
+		 * 1. rerun?
+		 * 		dont need to. Just press up arrow and enter to run the command with args again
+		 * 2. min-max build path recommendation
+		 * 		this should probably take at least 10x as long as just the ward windows
+		 */
 	}
 
 }
