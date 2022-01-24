@@ -91,12 +91,6 @@ public class Analysis {
 		 * time				time				time				time				time
 		 * time				time				time				time				time
 		 */
-		// the first line will always be the name
-		// the following evens will always be the times
-		// the following odds will always be the differences
-		// dont need to care about the odds/even differences,
-		// display them the same because theyll already contain
-		// the \tabs
 		String timetable = "";
 		for(SumInfo si  : enemyTeam) {
 			timetable += "" + si.name + "\t\t";

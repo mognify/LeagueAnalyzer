@@ -118,6 +118,9 @@ public class Main {
 		 * 		dont need to. Just press up arrow and enter to run the command with args again
 		 * 2. min-max build path recommendation
 		 * 		this should probably take at least 10x as long as just the ward windows
+		 * 		for mmbpr... needs to take into account how the character scales
+		 * 		how the units scale
+		 * 		defense/damage types
 		 */
 	}
 
